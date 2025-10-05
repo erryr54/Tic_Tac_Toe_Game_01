@@ -8,7 +8,7 @@ This is a Challenge from the ZTM course prompt engineering.
 
 Instructions: 
 
-Step 1: Create a functioning Tic Tac Toe game in Replit
+Step 1: Create a functioning Tic Tac Toe game
 
 Step 2: Add an AI opponent for you to play against.
 
