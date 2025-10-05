@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic‑Tac‑Toe 🕷️</title>
+  <style>
+    :root{
+      /* Spider‑Man color theme */
+      --red: #e11d48; /* bright red */
+      --blue: #1d4ed8; /* deep blue */
+      --dark-blue: #0a0e2a; /* dark background */
+      --white: #f8fafc; /* light text */
+      --web-gray: #64748b; /* web lines */
+      --win: #10b981;
+      --lose: #ef4444;
+      --draw: #f59e0b;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:radial-gradient(circle at 50% 0%, var(--blue) 0%, var(--dark-blue) 80%);
+      color:var(--white);font-family:'Comic Sans MS', 'Inter', sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px;}
+
+    h1{text-shadow:2px 2px var(--red);font-size:clamp(24px,5vw,38px);letter-spacing:1px;margin-bottom:20px;}
+
+    .game{display:grid;gap:16px;place-items:center;}
+
+    .board{display:grid;grid-template-columns:repeat(3,100px);gap:8px;}
+    .cell{aspect-ratio:1/1;font-size:2.5rem;font-weight:bold;color:var(--white);border-radius:12px;
+      background:linear-gradient(145deg,var(--red),var(--blue));border:2px solid var(--web-gray);
+      display:grid;place-items:center;cursor:pointer;transition:transform .15s ease,background .2s ease;}
+    .cell:hover{transform:scale(1.05);background:linear-gradient(145deg,var(--blue),var(--red));}
+    .cell[aria-disabled="true"]{opacity:.5;cursor:not-allowed;}
+
+    .status{margin-top:10px;padding:10px 14px;border-radius:10px;font-weight:bold;background:rgba(0,0,0,0.4);text-align:center;}
+    .win{background:rgba(16,185,129,0.3);} .lose{background:rgba(239,68,68,0.3);} .draw{background:rgba(245,158,11,0.3);} 
+
+    button{background:var(--red);color:var(--white);border:none;padding:10px 18px;border-radius:8px;font-weight:bold;cursor:pointer;transition:background .2s ease;}
+    button:hover{background:var(--blue);}
+    select{padding:6px 10px;border-radius:8px;border:1px solid var(--web-gray);background:var(--dark-blue);color:var(--white);}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+
+    .score{display:flex;gap:12px;justify-content:center;margin-top:10px;}
+    .score span{background:rgba(0,0,0,0.3);padding:6px 10px;border-radius:8px;}
+  </style>
+</head>
+<body>
+  <div class="game">
+    <h1>🕸️ Tic‑Tac‑Toe 🕸️</h1>
+    <div class="controls">
+      <label>You play <select id="markSelect"><option value="X">X</option><option value="O">O</option></select></label>
+      <label>Who starts <select id="starterSelect"><option value="human">Human</option><option value="ai">AI</option></select></label>
+      <label>Difficulty <select id="difficultySelect"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label>
+      <button id="newGameBtn">🔁 New Game</button>
+    </div>
+    <div id="board" class="board"></div>
+    <div id="status" class="status">Your move.</div>
+    <div class="score">
+      <span>You: <strong id="scoreHuman">0</strong></span>
+      <span>AI: <strong id="scoreAI">0</strong></span>
+      <span>Draws: <strong id="scoreDraw">0</strong></span>
+    </div>
+    <button id="resetBtn">↩︎ Reset Scores</button>
+  </div>
+
+  <script>
+    const boardEl=document.getElementById('board');
+    const statusEl=document.getElementById('status');
+    const markSelect=document.getElementById('markSelect');
+    const starterSelect=document.getElementById('starterSelect');
+    const difficultySelect=document.getElementById('difficultySelect');
+    const newGameBtn=document.getElementById('newGameBtn');
+    const resetBtn=document.getElementById('resetBtn');
+    const scoreHumanEl=document.getElementById('scoreHuman');
+    const scoreAIEl=document.getElementById('scoreAI');
+    const scoreDrawEl=document.getElementById('scoreDraw');
+
+    let board, humanMark, aiMark, currentTurn, gameOver;
+    const scores={human:0,ai:0,draw:0};
+    const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+    function setStatus(text,type=''){statusEl.textContent=text;statusEl.className=`status ${type}`;}
+    function renderBoard(){boardEl.innerHTML='';board.forEach((v,i)=>{const b=document.createElement('button');b.className='cell';b.textContent=v||'';b.disabled=!!v||gameOver||currentTurn!=='human';b.setAttribute('aria-disabled',String(b.disabled));b.addEventListener('click',()=>humanMove(i));boardEl.appendChild(b);});}
+
+    function startGame(){board=Array(9).fill('');humanMark=markSelect.value;aiMark=humanMark==='X'?'O':'X';currentTurn=starterSelect.value;gameOver=false;setStatus(currentTurn==='human'?'Your move.':'AI is thinking…');renderBoard();if(currentTurn==='ai')setTimeout(aiMove,400);}
+
+    function resetScores(){scores.human=scores.ai=scores.draw=0;updateScores();startGame();}
+    function updateScores(){scoreHumanEl.textContent=scores.human;scoreAIEl.textContent=scores.ai;scoreDrawEl.textContent=scores.draw;}
+
+    function humanMove(i){if(gameOver||board[i])return;board[i]=humanMark;checkState();}
+
+    function checkState(){const w=winner(board);if(w){gameOver=true;const humanWin=w===humanMark;humanWin?scores.human++:scores.ai++;updateScores();setStatus(humanWin?'You win! 🎉':'AI wins! 🤖',humanWin?'win':'lose');return;}if(draw(board)){gameOver=true;scores.draw++;updateScores();setStatus('It\'s a draw!', 'draw');return;}currentTurn=currentTurn==='human'?'ai':'human';renderBoard();if(currentTurn==='ai'){setStatus('AI is thinking…');setTimeout(aiMove,350);}else setStatus('Your move.');}
+
+    function winner(b){for(const [a,c,d] of LINES){if(b[a]&&b[a]===b[c]&&b[a]===b[d])return b[a];}return null;}
+    function draw(b){return !winner(b)&&b.every(Boolean);}
+    function empty(b){return b.map((v,i)=>v?null:i).filter(i=>i!==null);}
+
+    function aiMove(){if(gameOver)return;const diff=difficultySelect.value;let move;if(diff==='easy')move=random(b=>b);else if(diff==='medium')move=bestMove(board,3);else move=bestMove(board);board[move]=aiMark;checkState();}
+
+    function randomMove(b){const e=empty(b);return e[Math.floor(Math.random()*e.length)];}
+
+    function bestMove(b,maxDepth=Infinity){let best=-Infinity,move=null;for(const i of empty(b)){const next=b.slice();next[i]=aiMark;const score=minimax(next,false,0,maxDepth,-Infinity,Infinity);if(score>best){best=score;move=i;}}return move;}
+
+    function minimax(b,isMax,depth,maxDepth,a,beta){const w=winner(b);if(w===aiMark)return 10-depth;if(w===humanMark)return depth-10;if(draw(b))return 0;if(depth>=maxDepth)return hint(b);
+      if(isMax){let best=-Infinity;for(const i of empty(b)){const next=b.slice();next[i]=aiMark;const val=minimax(next,false,depth+1,maxDepth,a,beta);best=Math.max(best,val);a=Math.max(a,val);if(beta<=a)break;}return best;}else{let best=Infinity;for(const i of empty(b)){const next=b.slice();next[i]=humanMark;const val=minimax(next,true,depth+1,maxDepth,a,beta);best=Math.min(best,val);beta=Math.min(beta,val);if(beta<=a)break;}return best;}}
+
+    function hint(b){let s=0;const score={center:3,corner:2,edge:1};const type=i=>[4].includes(i)?'center':[0,2,6,8].includes(i)?'corner':'edge';b.forEach((m,i)=>{if(!m)return;const base=score[type(i)];s+=(m===aiMark?1:-1)*base;});return s;}
+
+    newGameBtn.addEventListener('click',startGame);
+    resetBtn.addEventListener('click',resetScores);
+    startGame();
+  </script>
+</body>
+</html>
